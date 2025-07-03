@@ -25,7 +25,7 @@ impl AcpiHandler for AcpiMapper {
         let virt = *self.top.borrow();
         *self.top.borrow_mut() += mapped_size;
 
-        memory::map(pool, virt).unwrap();
+        memory::map(pool, virt);
 
         PhysicalMapping::new(
             physical_address,

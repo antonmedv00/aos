@@ -89,13 +89,11 @@ impl Memory {
         Ok(())
     }
 
-    unsafe fn map_kernel(&self) -> Result<()> {
+    unsafe fn map_kernel(&self) {
         println!("[+] Mapping Memory");
 
         println!("Mapping 0x{:x} -- 0x{:x} to 0x{:x} -- 0x{:x}", self.kernel.start, self.kernel.end - 1, KERNEL_START, KERNEL_END);
-        memory::map(self.kernel, KERNEL_START)?;
-
-        Ok(())
+        memory::map(self.kernel, KERNEL_START);
     }
 }
 
@@ -179,7 +177,7 @@ fn init() -> Result<()> {
 
     let kstart = load_kernel(&mem)?;
     let acpi = find_acpi()?;
-    unsafe { mem.map_kernel()? };
+    unsafe { mem.map_kernel(); }
     wait_for_key()?;
 
     println!("[+] Starting Kernel");

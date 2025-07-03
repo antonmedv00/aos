@@ -15,7 +15,7 @@ pub const KERNEL_SIZE:  u64 = KERNEL_END - KERNEL_START + 1;
 #[derive(Clone, Copy)]
 pub struct MemoryPool {
     pub start: u64,
-    pub end:   u64
+    pub end: u64
 }
 
 impl MemoryPool {
@@ -43,7 +43,7 @@ impl MemoryPool {
         let pend = self.end - 1;
         let vend = vstart + self.size() - 1;
 
-        let vstart: Page<Size2MiB> = Page::from_start_address(VirtAddr::new(vstart)).map_err(Error::msg)?;
+        let vstart = Page::<Size2MiB>::from_start_address(VirtAddr::new(vstart)).map_err(Error::msg)?;
         let vend = Page::containing_address(VirtAddr::new(vend));
         let pstart = PhysFrame::from_start_address(PhysAddr::new(pstart)).map_err(Error::msg)?;
         let pend = PhysFrame::containing_address(PhysAddr::new(pend));
@@ -75,8 +75,6 @@ impl MemoryPool {
     }
 }
 
-// TODO: figure out a better way
-
 pub struct GlobalFrameAllocator;
 
 unsafe impl<S: PageSize> FrameAllocator<S> for GlobalFrameAllocator {
@@ -95,25 +93,25 @@ unsafe impl<S: PageSize> FrameAllocator<S> for GlobalFrameAllocator {
     }
 }
 
-pub unsafe fn map(pool: MemoryPool, virt: u64) -> Result<()> {
+// TODO: maybe store page table in a static struct
+
+pub unsafe fn map(pool: MemoryPool, virt: u64) {
     let (ptframe, _) = Cr3::read();
     let pt = &mut *(ptframe.start_address().as_u64() as *mut PageTable);
     let mut page_table = OffsetPageTable::new(pt, VirtAddr::zero());
 
-    pool.map(&mut page_table, &mut GlobalFrameAllocator, virt)
+    pool.map(&mut page_table, &mut GlobalFrameAllocator, virt).unwrap();
 }
 
-pub unsafe fn unmap(vstart: u64, count: usize) -> Result<()> {
+pub unsafe fn unmap(vstart: u64, count: usize) {
     let (ptframe, _) = Cr3::read();
     let pt = &mut *(ptframe.start_address().as_u64() as *mut PageTable);
     let mut page_table = OffsetPageTable::new(pt, VirtAddr::zero());
 
-    let vstart: Page<Size2MiB> = Page::from_start_address(VirtAddr::new(vstart)).map_err(Error::msg)?;
-    let vend = vstart + count as u64 * Size2MiB::SIZE;
+    let vstart = Page::<Size2MiB>::from_start_address(VirtAddr::new(vstart)).unwrap();
+    let vend = vstart + count as u64;
     for page in Page::range(vstart, vend) {
-        page_table.unmap(page).map_err(|e| anyhow!("{e:?}"))?.1
+        page_table.unmap(page).unwrap().1
             .flush();
     }
-
-    Ok(())
 }

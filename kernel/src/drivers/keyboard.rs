@@ -38,7 +38,7 @@ impl Keyboard {
                 .and_then(|x| {
                     match x {
                         DecodedKey::Unicode(x) => Some(x),
-                        _                            => None
+                        _ => None
                     }
                 })
         )
